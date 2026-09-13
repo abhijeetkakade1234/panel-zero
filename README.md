@@ -25,6 +25,8 @@ For playing without development reloads, stop the dev server and run `npm run pr
 
 WASD moves, mouse or arrow keys look, E inspects, and Escape pauses. If mouse capture is unavailable, click and drag or use arrow keys. Pause includes mute and restart. Reading stops movement. Reload starts a new run.
 
+Enter and Resume request browser fullscreen; if the browser blocks it, windowed play still works. Mouse look defaults to a slower speed and can be adjusted with the sensitivity slider in Pause. Reading dialogs stay centered in the visible viewport and scroll on short windows.
+
 The current sequence includes apartment exploration, Mrs. Arai in 402, a lying manga chapter, the red-light decision, and two endings reached by returning home. No AI API or paid service is required to play.
 
 ## Current limits

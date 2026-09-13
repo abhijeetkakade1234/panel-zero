@@ -20,8 +20,9 @@
       <div class="menu-bottom"><span>THE TENANT IN THE MARGINS</span><span>CHAPTER 00</span></div>
     </section>
     <dialog id="reading"><div class="reader"><div class="panel-art" role="img" aria-label="Ink illustration of the apartment, an empty corridor, and a hand delivering a page."></div><div class="reader-copy"><p id="page-number" class="chapter-label"></p><h2 id="page-title"></h2><div id="page-copy"></div><button id="close-page">Put the page down <span>↗</span></button><button id="other-choice" hidden></button></div></div></dialog>
-    <dialog id="pause"><p class="chapter-label">BETWEEN PANELS</p><h2>The story can wait.</h2><p>WASD move · E inspect<br>Mouse / arrow keys look · Escape pause<br>Click and drag if mouse capture is unavailable.</p><button id="resume">Return to the room</button><button id="mute" class="secondary">Sound: on</button><button id="restart" class="secondary">Start over</button></dialog>
+    <dialog id="pause"><p class="chapter-label">BETWEEN PANELS</p><h2>The story can wait.</h2><p>WASD move · E inspect<br>Mouse / arrow keys look · Escape pause<br>Click and drag if mouse capture is unavailable.</p><label class="sensitivity" for="sensitivity">Mouse sensitivity <span>Slow / Fast</span><input id="sensitivity" type="range" min="1" max="10" value="5" /></label><button id="resume">Return to the room</button><button id="mute" class="secondary">Sound: on</button><button id="restart" class="secondary">Start over</button></dialog>
     <div id="fatal" hidden><h2>This room couldn't open.</h2><p>Panel Zero needs a browser with WebGL 2 enabled. Try a current desktop browser with hardware acceleration.</p></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
+

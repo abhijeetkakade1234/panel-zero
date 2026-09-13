@@ -14,6 +14,8 @@ function run(){
   let stage=0,started=false,paused=true,yaw=0,pitch=-.03,target=null,dragging=false,muted=false,keptLight=false,choicePending=false;
   let audio,master,ringTimer,closeAction=null;
   const keys=new Set();
+  let mouseSensitivity=.0007;
+  $('sensitivity').addEventListener('input',event=>{mouseSensitivity=Number(event.target.value)*.00014;});
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const forward=new T.Vector3(),direction=new T.Vector3();
   function startAudio(){
@@ -31,9 +33,13 @@ function run(){
   function capture(){canvas.focus();try{const result=canvas.requestPointerLock?.();result?.catch(()=>{});}catch{/* Arrow keys and drag work without pointer capture. */}}
   function refresh(){world.sync(stage,keptLight);$('objective').textContent=stage===6?(keptLight?'The light is still on. Go home to 404.':'The light is out. Find apartment 000.'):objectives[stage];$('clock').textContent=stage===0?'00:07':stage<6?'00:08':keptLight?'00:09':'00:00';}
   function resume(){paused=false;keys.clear();if(pause.open)pause.close();capture();}
+  async function enterFullscreen(){
+    try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen?.();}catch{/* Keep windowed play available when fullscreen is blocked. */}
+    resume();
+  }
   function reset(){stage=0;keptLight=false;choicePending=false;yaw=0;pitch=-.03;world.camera.position.set(0,1.6,3.1);closeAction=null;if(reading.open)reading.close();refresh();}
-  $('begin').onclick=()=>{started=true;$('menu').hidden=true;$('menu').style.display='none';document.body.classList.remove('in-menu');startAudio();resume();};
-  $('resume').onclick=resume;
+  $('begin').onclick=()=>{started=true;$('menu').hidden=true;$('menu').style.display='none';document.body.classList.remove('in-menu');startAudio();enterFullscreen();};
+  $('resume').onclick=enterFullscreen;
   $('restart').onclick=()=>{reset();resume();};
   $('mute').onclick=()=>{muted=!muted;if(master)master.gain.value=muted?0:.12;$('mute').textContent=`Sound: ${muted?'off':'on'}`;};
   function showPause(){if(!started||reading.open||pause.open)return;paused=true;release();pause.showModal();$('resume').focus();}
@@ -127,7 +133,7 @@ function run(){
   document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&!paused)showPause();});
   canvas.addEventListener('pointerdown',()=>{if(!paused)dragging=true;});
   addEventListener('pointerup',()=>{dragging=false;});
-  addEventListener('mousemove',event=>{if(!paused&&(document.pointerLockElement===canvas||dragging)){yaw-=event.movementX*.002;pitch-=event.movementY*.002;pitch=T.MathUtils.clamp(pitch,-1.15,1.15);}});
+  addEventListener('mousemove',event=>{if(!paused&&(document.pointerLockElement===canvas||dragging)){yaw-=event.movementX*mouseSensitivity;pitch-=event.movementY*mouseSensitivity;pitch=T.MathUtils.clamp(pitch,-1.15,1.15);}});
   function pick(){
     world.camera.getWorldDirection(forward);target=null;let best=0;
     for(const object of world.objects){
