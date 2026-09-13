@@ -7,6 +7,7 @@ export const objectives = [
   'The page says to turn off the red light. Decide.',
   'The service door is unlocked. Go outside.',
   'Paper boat: on the lit bench to your left.',
+  'The tenant in 401 saw the same face. Knock before the lights fail.',
   'Fuse collected. Cross the courtyard to the POWER cabinet on the right wall.',
   'DRAIN: far wall, beneath the red lamp. Walk around the swing. Hold E to pull.',
   'Get back inside. Return to your apartment.',
@@ -18,7 +19,7 @@ export function pullProgress(progress, holding, dt) {
   return Math.max(0, Math.min(3, progress + (holding ? dt : -dt * 2)));
 }
 
-const sequence = ['page', 'phone', 'door', 'neighbor', 'hallpage', 'switch', 'exit', 'boat', 'power', 'drain', 'door', 'finalpage'];
+const sequence = ['page', 'phone', 'door', 'neighbor', 'hallpage', 'switch', 'exit', 'boat', 'flat', 'power', 'drain', 'door', 'finalpage'];
 export function advance(stage, object) {
   return sequence[stage] === object ? stage + 1 : stage;
 }
@@ -32,7 +33,7 @@ export function canWalk(x, z, stage) {
   const bed = x > 1.3 && z > .15 && z < 3.55;
   const shelf = x < -1.8 && z < -1.7 && z > -2.75;
   const passage = stage >= 7 && x > -2 && x < -.6 && z > -10.7 && z < -9.2;
-  const yard = stage >= 7 && x > -5.45 && x < 5.45 && z > -23.5 && z <= -10.4;
+  const yard = stage >= 7 && x > -8.15 && x < 8.15 && z > -27.5 && z <= -10.4;
   const bench = x < -2.8 && z > -15 && z < -13.4;
   const swing = x > -1.4 && x < 1.4 && z > -19.7 && z < -17.7;
   return (room || doorway || hall || passage || yard) && !(room && (desk || bed || shelf)) && !(yard && (bench || swing));

@@ -130,11 +130,13 @@ export function makeRoom(canvas) {
   const firstPage=page(.95,-2.45),hallPage=page(.2,-8.35),finalPage=page(-1.75,.68);
   finalPage.position.y=.925;finalPage.visible=false;
   // Outdoor service courtyard: a real traversable space beyond the corridor.
-  box(12,.14,14,0,-.1,-17,'#273b41');
+  box(18,.14,18,0,-.1,-19,'#273b41');
   for(let row=0;row<14;row++)for(let col=0;col<8;col++)
     box(1.47,.025,.97,-5.25+col*1.5,.006,-10.5-row,['#304850','#354b50','#3d5053'][(row+col)%3]);
-  box(.2,7,14,-5.8,3.5,-17,'#263e48');box(.2,7,14,5.8,3.5,-17,'#304751');
-  box(12,3.8,.2,0,1.9,-24,'#31464b');
+  box(.2,7,18,-8.5,3.5,-19,'#263e48');box(.2,7,18,8.5,3.5,-19,'#304751');
+  box(18,3.8,.2,0,1.9,-28,'#31464b');
+  box(1.5,2.8,.12,4.4,1.4,-14,'#344a4a');
+  const flatLabel=label('401',.5,.22,4.4,2.35,-13.92,'#18282b','#e3d4ae');
   for(const x of [-5.67,5.67]){
     for(let j=0;j<3;j++)for(let i=0;i<4;i++){
       box(.03,1.1,.8,x,2.8+j*1.65,-12-i*2.7,new T.MeshBasicMaterial({color:(i+j)%3===0?'#a68f60':'#172c35'}));
@@ -179,7 +181,7 @@ export function makeRoom(canvas) {
   const outsideRain=new T.BufferGeometry(),rainPoints=new Float32Array(240*6);
   for(let i=0;i<240;i++){const x=-5.5+(i*.731)%11,y=(i*.419)%6,z=-10.5-(i*.613)%13;rainPoints.set([x,y,z,x,y-.2,z],i*6);}
   outsideRain.setAttribute('position',new T.BufferAttribute(rainPoints,3));scene.add(new T.LineSegments(outsideRain,new T.LineBasicMaterial({color:'#94c4cf',transparent:true,opacity:.25})));
-  const foldTexture=new T.TextureLoader().load('/art/fold.png');foldTexture.colorSpace=T.SRGBColorSpace;
+  const foldTexture=new T.TextureLoader().load('/art/tenant.svg');foldTexture.colorSpace=T.SRGBColorSpace;
   const apparition=new T.Sprite(new T.SpriteMaterial({map:foldTexture,transparent:true,depthTest:true,depthWrite:false,opacity:.98}));
   apparition.center.set(.5,.87);apparition.renderOrder=10;
   apparition.scale.set(2,3,1);apparition.visible=false;scene.add(apparition);
@@ -206,6 +208,7 @@ export function makeRoom(canvas) {
     {id:'finalpage',name:'Read the page on your desk',position:new T.Vector3(-1.75,1.05,.68)},
     {id:'exit',name:'Open the service door',position:new T.Vector3(-1.3,1.4,-9.8)},
     {id:'boat',name:'Unfold the paper boat',position:new T.Vector3(-3.6,.9,-14.15)},
+    {id:'flat',name:'Knock on apartment 401',position:new T.Vector3(4.4,1.4,-14)},
     {id:'power',name:'Fit the fuse in the power cabinet',position:new T.Vector3(5.1,1.3,-18)},
     {id:'drain',name:'Pull the page from the storm drain',position:new T.Vector3(.4,.9,-23.7)},
     {id:'cup',name:'Inspect the cup',position:new T.Vector3(-1.85,1.05,.2)},
@@ -215,9 +218,9 @@ export function makeRoom(canvas) {
   let zeroPlaque;
   function sync(stage,keptLight=false){
     renderer.shadowMap.needsUpdate=true;
-    firstPage.visible=stage===0;hallPage.visible=stage<5;finalPage.visible=stage===11;
+    firstPage.visible=stage===0;hallPage.visible=stage<5;finalPage.visible=stage===12;
     boat.visible=stage<8;serviceDoor.visible=stage<7;poweredLamp.intensity=stage>=9?35:0;
-    drainPage.visible=stage<10;drainSign.visible=stage>=9;
+    drainPage.visible=stage<11;drainSign.visible=stage>=9;
     drainLight.intensity=stage>=9?35:8;
     const doorClosed=stage<3||(stage>=6&&stage<11);
     doorParts.forEach(p=>p.visible=doorClosed);
@@ -234,7 +237,7 @@ export function makeRoom(canvas) {
     finalPage.material.map=keptLight?null:art;finalPage.material.color.set(keptLight?'#efe9d6':'#ffffff');finalPage.material.needsUpdate=true;
     warm.intensity=stage>=11?(keptLight?20:3):15;
     ceiling.color.set(stage>=11&&!keptLight?'#647f94':'#c2d1c7');
-    objects[2].name=stage===10?`Return to apartment ${keptLight?'404':'000'}`:'Open apartment 404';
+    objects[2].name=stage===11?`Return to apartment ${keptLight?'404':'000'}`:'Open apartment 404';
   }
   let scareRemaining=0,scareLength=0,scareId='',swingTime=0;
   const scareForward=new T.Vector3();

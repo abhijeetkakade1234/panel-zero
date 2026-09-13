@@ -6,9 +6,9 @@ test('complete story, out-of-order interactions, collision, and closed entrance'
   let stage = 0;
   assert.equal(advance(stage, 'phone'), 0);
   assert.equal(canWalk(.9, -3, stage), false);
-  for (const object of ['page', 'phone', 'door', 'neighbor', 'hallpage', 'switch', 'exit', 'boat', 'power', 'drain', 'door', 'finalpage']) stage = advance(stage, object);
-  assert.equal(stage, 12);
-  assert.equal(advance(stage, 'page'), 12);
+  for (const object of ['page', 'phone', 'door', 'neighbor', 'hallpage', 'switch', 'exit', 'boat', 'flat', 'power', 'drain', 'door', 'finalpage']) stage = advance(stage, object);
+  assert.equal(stage, 13);
+  assert.equal(advance(stage, 'page'), 13);
   assert.equal(canWalk(.9, -3, 3), true);
   assert.equal(canWalk(.9, -3, 6), false);
   assert.equal(canWalk(.9, -3, 7), false);
@@ -24,7 +24,7 @@ test('complete story, out-of-order interactions, collision, and closed entrance'
   assert.equal(canWalk(-2.5, -14, 7), true);
   assert.equal(canWalk(-3.6, -14, 7), false);
   assert.equal(canWalk(0, -18.7, 7), false);
-  assert.equal(canWalk(0, -25, 7), false);
+  assert.equal(canWalk(0, -25, 7), true);
   assert.equal(advance(7, 'power'), 7);
   assert.equal(advance(8, 'drain'), 8);
   const played=new Set();

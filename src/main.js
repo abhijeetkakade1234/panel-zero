@@ -56,7 +56,7 @@ function run(){
   function tone(frequency,duration=.18,volume=.15){if(!audio||muted)return;const oscillator=audio.createOscillator(),gain=audio.createGain();oscillator.frequency.value=frequency;gain.gain.setValueAtTime(volume,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);oscillator.connect(gain);gain.connect(master);oscillator.start();oscillator.stop(audio.currentTime+duration);}
   function release(){keys.clear();dragging=false;if(document.pointerLockElement)document.exitPointerLock();}
   function capture(){canvas.focus();try{const result=canvas.requestPointerLock?.();result?.catch(()=>{});}catch{/* Arrow keys and drag work without pointer capture. */}}
-  function refresh(){world.sync(stage,keptLight);$('objective').textContent=stage===10?(keptLight?'RUN — hold Shift. Return through the service door to 404.':'RUN — hold Shift. Return through the service door to apartment 000.'):objectives[stage];$('clock').textContent=stage===0?'00:07':stage<10?'00:08':keptLight?'00:09':'00:00';}
+  function refresh(){world.sync(stage,keptLight);$('objective').textContent=stage===11?(keptLight?'RUN — hold Shift. Return through the service door to 404.':'RUN — hold Shift. Return through the service door to apartment 000.'):objectives[stage];$('clock').textContent=stage===0?'00:07':stage<10?'00:08':keptLight?'00:09':'00:00';}
   function resume(){startAudio();paused=false;keys.clear();if(pause.open)pause.close();capture();}
   async function enterFullscreen(){
     try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen?.();}catch{/* Keep windowed play available when fullscreen is blocked. */}
@@ -101,7 +101,7 @@ function run(){
     }
     else if(id==='door'){
       if(stage===2){stage=advance(stage,id);tone(110,.5);refresh();}
-      else if(stage===10){
+      else if(stage===11){
         stage=advance(stage,id);refresh();tone(110,.5);
         read('BACK AT YOUR DOOR',keptLight?'404. Still yours.':'000. Before you lived here.',keptLight?[
           'The latch opens before you touch it. From 402, Mrs. Arai calls: “You’re late. That’s new.”',
@@ -141,7 +141,14 @@ function run(){
         'A note: POWER FIRST. THEN REACH INTO THE DRAIN. Behind you, a swing starts to move.',
       ],1,()=>{stage=advance(stage,id);},'Take the fuse');
     }
-    else if(id==='power'&&stage===8){
+    else if(id==='flat'&&stage===8){
+      read('APARTMENT 401 / THE TENANT','She has been waiting behind the chain.',[
+        'A woman opens the door only far enough to show one eye. “You heard the telephone, didn’t you? It always calls the newest tenant first.”',
+        'A child’s drawing beside the latch shows a tall figure with no face, only a red line where a mouth should be.',
+        '“It is empty,” she says. “It borrows the voice of whoever answers. Take the fuse. When the courtyard goes dark, do not look up.”',
+      ],1,()=>{stage=advance(stage,id);tone(58,.6);},'Take the fuse');
+    }
+    else if(id==='power'&&stage===9){
       stage=advance(stage,id);tone(160,.5);refresh();
       read('POWER RESTORED','The courtyard has been waiting.',[
         'The fuse clicks into place. Follow the light to the FAR WALL, past the swing. The barred opening beneath the RED LAMP is the storm drain. A page is trapped inside.',
@@ -149,7 +156,7 @@ function run(){
         'Your father never called you by the name it uses. Get close, look at the trapped page, and HOLD E to pull it out. If you let go, it pulls the page back.',
       ],1,null,'Find the missing panel');
     }
-    else if(id==='finalpage'&&stage===11){
+    else if(id==='finalpage'&&stage===12){
       stage=advance(stage,id);refresh();
       read(keptLight?'ENDING 02 / OUTSIDE THE FRAME':'ENDING 01 / THE DELIVERY',keptLight?'One minute nobody wrote.':'You know this hand.',keptLight?[
         'The page shows the corridor, the red light, and Mrs. Arai’s door. Underneath is an empty panel. No instructions. No picture of you.',
@@ -181,11 +188,11 @@ function run(){
   function pick(){
     world.camera.getWorldDirection(forward);target=null;let best=0;
     for(const object of world.objects){
-      if(object.id==='page'&&stage!==0||object.id==='hallpage'&&stage!==4||object.id==='switch'&&stage!==5||object.id==='finalpage'&&stage!==11||object.id==='door'&&stage>=3&&stage!==10||object.id==='neighbor'&&stage<3)continue;
-      if(['exit','boat','power','drain'].includes(object.id)&&stage!==({exit:6,boat:7,power:8,drain:9})[object.id])continue;
+      if(object.id==='page'&&stage!==0||object.id==='hallpage'&&stage!==4||object.id==='switch'&&stage!==5||object.id==='finalpage'&&stage!==12||object.id==='door'&&stage>=3&&stage!==11||object.id==='neighbor'&&stage<3)continue;
+      if(['exit','boat','flat','power','drain'].includes(object.id)&&stage!==({exit:6,boat:7,flat:8,power:9,drain:10})[object.id])continue;
       if(object.id==='neighbor'&&stage>=6&&!keptLight)continue;
       // Only offer room props on the room side of the entrance.
-      if(world.camera.position.z < -3.4 && !['door','hallpage','neighbor','switch','exit','boat','power','drain'].includes(object.id))continue;
+      if(world.camera.position.z < -3.4 && !['door','hallpage','neighbor','switch','exit','boat','flat','power','drain'].includes(object.id))continue;
       direction.copy(object.position).sub(world.camera.position);const distance=direction.length();
       if(distance>2.15)continue;const facing=direction.normalize().dot(forward);
       const score=facing-distance*.08;if(facing>.65&&score>best){best=score;target=object;}
@@ -212,13 +219,13 @@ function run(){
       if(canWalk(world.camera.position.x,z,stage))world.camera.position.z=z;
       if(moving&&(world.camera.position.x!==oldX||world.camera.position.z!==oldZ)){stepTime+=dt;if(stepTime>(sprinting?.3:.5)){stepTime=0;impact(.09,.25);tone(85,.09,.17);}}else stepTime=0;
       world.camera.rotation.set(pitch,yaw,0,'YXZ');pick();
-      if(stage===9){
+      if(stage===10){
         pull=pullProgress(pull,target?.id==='drain'&&keys.has('KeyE'),dt);
         world.tension(pull/3,reduced);
         if(pull>0){beatTime+=dt;if(beatTime>.5-pull*.1){beatTime=0;impact(.12,.2+pull*.08);tone(48,.15,.2);}}
         if(pull===3){stage=advance(stage,'drain');pull=0;world.tension(0);refresh();}
       }
-      if(stage===10){beatTime+=dt;if(beatTime>.65){beatTime=0;tone(52,.18,.3);}}
+      if(stage===11){beatTime+=dt;if(beatTime>.65){beatTime=0;tone(52,.18,.3);}}
 
     }
     world.animate(paused?0:dt,now/1000,reduced);requestAnimationFrame(frame);

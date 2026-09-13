@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 1024">
+<defs><filter id="ink"><feTurbulence baseFrequency=".02" numOctaves="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="18"/></filter><radialGradient id="mask"><stop stop-color="#f1eee3"/><stop offset=".7" stop-color="#9ca5a2"/><stop offset="1" stop-color="#202b2c"/></radialGradient></defs>
+<g filter="url(#ink)" fill="#070d10" stroke="#020507" stroke-width="8" stroke-linejoin="round">
+<path d="M210 180Q150 330 190 500L120 870Q105 950 150 1010L225 930 260 690 285 930 365 1010Q410 945 382 855L322 500Q370 330 302 180Z"/><path d="M210 420Q95 510 46 765Q45 810 80 823L155 655 250 535Z"/><path d="M310 420Q430 500 475 765Q470 813 438 823L365 655 270 535Z"/><path d="M206 108Q245 58 310 110L340 230 270 292 178 235Z" fill="url(#mask)"/><path d="M225 190Q260 168 304 187" fill="none" stroke="#681f27" stroke-width="13"/><path d="M195 230L145 330M318 235L375 330" fill="none" stroke="#324344" stroke-width="17"/>
+</g><g fill="#ad3c42"><circle cx="244" cy="191" r="4"/><circle cx="282" cy="191" r="4"/></g></svg>

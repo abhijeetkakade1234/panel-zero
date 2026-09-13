@@ -37,3 +37,6 @@ The requested film inspiration informs the childhood-memory lure and neighborhoo
 ## Telephone voice
 
 `public/audio/telephone.ogg` is a 26-second locally synthesized performance of the existing call dialogue. Microsoft David Desktop reads the caller, Microsoft Zira Desktop reads “Keep it on.” Generated with Windows System.Speech using slower SSML pacing, then FFmpeg high/low-pass telephone filtering and loudness normalization. No real person was cloned. The female line is mixed quieter. The clip is bundled locally, uses the game master volume/mute, stops on hang-up or restart, pauses when focus is lost, and can be replayed while the call is open. This is a synthetic prototype performance, not recorded voice acting.
+## The Tenant replacement
+
+`public/art/tenant.svg` is an original vector horror asset created for this revision after the external image-generation service hit its usage limit. It uses a tall asymmetrical silhouette, wet mask, red mouth slit, and long hands; it does not reference Pennywise, The IT creature, or any other copyrighted character. It is intentionally a transparent billboard while a future art pass can replace it with a rigged model.

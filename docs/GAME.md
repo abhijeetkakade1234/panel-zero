@@ -61,3 +61,7 @@ No open world, multiplayer, inventory grid, procedural story, AI dialogue, accou
 Later decisions follow playtesting: a larger story, character animation, save slots, Blender art, and desktop distribution. Before publication, check title availability and review final asset provenance.
 
 The powered drain is labeled on the far wall beneath the red lamp. Directions name the bench, right-wall cabinet, and route around the swing. Recovering the panel happens in the world rather than a reading dialog: the paper moves, the light fades, and the rattling accelerates. The first apparition stands at the distant swing; the later two remain close encounters. The return has a heartbeat and a sprint control, but no chasing enemy or failure timer.
+
+## Chapter 01 revision
+
+The courtyard now opens into a larger apartment block. After the paper boat, apartment 401 becomes a real investigation stop: its tenant confirms that the telephone borrows voices and warns the player not to look up when the courtyard lights fail. Only then does the player take the fuse to the power cabinet and approach the drain. The old paper mascot has been replaced by The Tenant: a tall, faceless silhouette with an off-angle head and a red mouth-slit. The three appearances are story beats, not the ending itself; the final page resolves whether the player believed the witness.
