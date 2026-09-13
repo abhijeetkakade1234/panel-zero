@@ -167,6 +167,7 @@ export function makeRoom(canvas) {
   for(let i=0;i<9;i++)box(.045,1.6,.08,-.48+i*.22,.8,-23.79,'#697677');
   box(2.15,.12,.12,.4,1.61,-23.79,'#687775');
   const drainPage=new T.Mesh(new T.PlaneGeometry(.3,.4),new T.MeshStandardMaterial({map:art,side:T.DoubleSide}));drainPage.position.set(.4,.8,-23.72);scene.add(drainPage);
+  const drainSign=label('DRAIN',1.5,.32,.4,1.9,-23.7,'#162528','#ffe0a3');
   const drainLight=new T.PointLight('#e8593e',16,6,2);drainLight.position.set(.4,2.3,-23);scene.add(drainLight);
   box(.18,.18,.06,.4,2.1,-23.8,new T.MeshBasicMaterial({color:'#ea694f'}));
   const wet=new T.MeshStandardMaterial({color:'#597377',roughness:.15,metalness:.45,transparent:true,opacity:.48});
@@ -179,13 +180,13 @@ export function makeRoom(canvas) {
   for(let i=0;i<240;i++){const x=-5.5+(i*.731)%11,y=(i*.419)%6,z=-10.5-(i*.613)%13;rainPoints.set([x,y,z,x,y-.2,z],i*6);}
   outsideRain.setAttribute('position',new T.BufferAttribute(rainPoints,3));scene.add(new T.LineSegments(outsideRain,new T.LineBasicMaterial({color:'#94c4cf',transparent:true,opacity:.25})));
   const foldTexture=new T.TextureLoader().load('/art/fold.png');foldTexture.colorSpace=T.SRGBColorSpace;
-  const apparition=new T.Sprite(new T.SpriteMaterial({map:foldTexture,transparent:true,depthTest:false,depthWrite:false,opacity:.98}));
+  const apparition=new T.Sprite(new T.SpriteMaterial({map:foldTexture,transparent:true,depthTest:true,depthWrite:false,opacity:.98}));
   apparition.center.set(.5,.87);apparition.renderOrder=10;
   apparition.scale.set(2,3,1);apparition.visible=false;scene.add(apparition);
   // ponytail: batch static props by material; moving props stay separate.
   const batches=new Map(),ink=[];
   for(const mesh of [...scene.children]){
-    if(!mesh.isMesh||doorParts.includes(mesh)||[firstPage,hallPage,finalPage,neighborGlow,switchLever,erasedDoor,serviceDoor,drainPage].includes(mesh))continue;
+    if(!mesh.isMesh||doorParts.includes(mesh)||[firstPage,hallPage,finalPage,neighborGlow,switchLever,erasedDoor,serviceDoor,drainPage,drainSign].includes(mesh))continue;
     mesh.updateMatrixWorld(true);
     const geometry=mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
     if(!batches.has(mesh.material))batches.set(mesh.material,[]);
@@ -216,7 +217,8 @@ export function makeRoom(canvas) {
     renderer.shadowMap.needsUpdate=true;
     firstPage.visible=stage===0;hallPage.visible=stage<5;finalPage.visible=stage===11;
     boat.visible=stage<8;serviceDoor.visible=stage<7;poweredLamp.intensity=stage>=9?35:0;
-    drainPage.visible=stage<10;
+    drainPage.visible=stage<10;drainSign.visible=stage>=9;
+    drainLight.intensity=stage>=9?35:8;
     const doorClosed=stage<3||(stage>=6&&stage<11);
     doorParts.forEach(p=>p.visible=doorClosed);
     if(stage>=6&&stage<11){
@@ -236,16 +238,17 @@ export function makeRoom(canvas) {
   }
   let scareRemaining=0,scareLength=0,scareId='',swingTime=0;
   const scareForward=new T.Vector3();
-  function scare(id){scareId=id;scareRemaining=scareLength=id==='drain'?1.1:.9;camera.getWorldDirection(scareForward);apparition.position.copy(camera.position).addScaledVector(scareForward,id==='gate'?4:2.5);apparition.visible=true;}
+  function scare(id){scareId=id;scareRemaining=scareLength=id==='drain'?1.1:.9;camera.getWorldDirection(scareForward);apparition.position.copy(camera.position).addScaledVector(scareForward,id==='gate'?4:2.5);apparition.visible=true;if(id==='gate'){apparition.position.set(0,2.5,-18.7);apparition.scale.set(.9,2.5,1);}}
   function clearScare(){scareRemaining=0;apparition.visible=false;swingTime=0;}
   function animate(dt,time,reduced){
     swingTime+=dt;if(!reduced)swing.rotation.x=Math.sin(swingTime*1.8)*.13;
-    if(scareRemaining>0){scareRemaining=Math.max(0,scareRemaining-dt);const progress=1-scareRemaining/scareLength;if(!reduced)apparition.position.addScaledVector(scareForward,-dt*(scareId==='gate'?2:1.5));apparition.material.opacity=scareRemaining>0?1:0;const growth=reduced?0:progress;apparition.scale.set(2+growth,3+growth,1);apparition.visible=scareRemaining>0;}
+    if(scareRemaining>0){scareRemaining=Math.max(0,scareRemaining-dt);const progress=1-scareRemaining/scareLength;if(!reduced&&scareId!=='gate')apparition.position.addScaledVector(scareForward,-dt*1.5);apparition.material.opacity=scareRemaining>0?1:0;const growth=reduced?0:progress;if(scareId!=='gate')apparition.scale.set(2+growth,3+growth,1);apparition.visible=scareRemaining>0;}
     if(!reduced){for(let i=0;i<240;i++){rainPoints[i*6+1]-=dt*3;rainPoints[i*6+4]-=dt*3;if(rainPoints[i*6+1]<0){rainPoints[i*6+1]+=6;rainPoints[i*6+4]+=6;}}outsideRain.attributes.position.needsUpdate=true;}
     if(!reduced){for(let i=0;i<180;i++){drops[i*6+1]-=dt*2.5;drops[i*6+4]-=dt*2.5;if(drops[i*6+1]<.2){drops[i*6+1]+=4;drops[i*6+4]+=4;}}rainGeo.attributes.position.needsUpdate=true;}
     renderer.render(scene,camera);
   }
   function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
   resize();addEventListener('resize',resize);
-  return {renderer,scene,camera,objects,sync,animate,scare,clearScare};
+  function tension(amount,reduced=false){drainPage.position.z=-23.72+amount*.3;drainPage.rotation.z=reduced?0:Math.sin(amount*60)*amount*.12;drainLight.intensity=35-amount*20;poweredLamp.intensity=35-amount*30;}
+  return {renderer,scene,camera,objects,sync,animate,scare,clearScare,tension};
 }

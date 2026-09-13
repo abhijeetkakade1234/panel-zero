@@ -71,3 +71,9 @@ A separate input-driven check paused during the second scare, confirmed its time
 ## Desktop decision
 
 Keep the browser build unless measured limitations justify a move. A desktop wrapper alone does not improve rendering. If the game later needs heavy lighting, many animated characters, or large streamed levels, evaluate a native engine before expanding the web implementation.
+
+## Audio and playability follow-up
+
+Playwright Chromium at 1280 x 800 completed the witness route and replay after verifying AudioContext running, volume changes, mute, sound-test unmute, drain hold progress, release regression, and completion. Exactly three scare triggers remained. No console errors or warnings were reported. Screenshots confirmed the sound controls and drain interaction prompt. Browser plugin unavailable; Playwright CLI was used. Unit checks cover pull progress bounds and release behavior. The temporary read-only probe was removed before production build. Device speaker output and subjective scariness cannot be established by browser automation; no new performance claim is made.
+
+Production audio verification also sampled the compressor output: the sound test produced a nonzero signal, mute reduced it below 0.0001, and testing at zero volume restored 65%. At 960 x 480 the scrollable pause dialog kept the test control accessible. Production contained no QA probe.

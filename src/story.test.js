@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { advance, canWalk, nextScare } from './story.js';
+import { advance, canWalk, nextScare, pullProgress } from './story.js';
 
 test('complete story, out-of-order interactions, collision, and closed entrance', () => {
   let stage = 0;
@@ -35,4 +35,8 @@ test('complete story, out-of-order interactions, collision, and closed entrance'
   }
   assert.equal(played.size,3);
   played.clear();assert.equal(nextScare(7,-12,played),'gate');
+  assert.equal(pullProgress(0,true,1),1);
+  assert.equal(pullProgress(1,false,.25),.5);
+  assert.equal(pullProgress(.1,false,1),0);
+  assert.equal(pullProgress(2.9,true,.2),3);
 });

@@ -45,10 +45,10 @@ Image-generated concept and comic art establish the mood. Actual walkable archit
 
 ## Controls and accessibility
 
-- WASD: move; mouse: look; E: inspect or use.
+- WASD: move; Shift: run; mouse: look; E: inspect or use. At the drain, hold E for three seconds; releasing it or looking away loses progress.
 - Arrow keys: look without pointer lock; click and drag: alternative mouse look.
 - Escape: pause or close the current reading panel.
-- Visible buttons for begin, resume, page close, mute, and replay.
+- Pause includes a volume slider, three-note sound test, mute, and replay. Audio resumes on entry and return. Rain, footsteps, rattling, impacts, and a return-trip heartbeat are synthesized locally.
 - Three sudden scares, announced on the title screen. No repeated strobing, combat, timed failure, or mandatory sound clues. Scares pause with gameplay and replay resets their one-shot triggers. Reduced motion suppresses the apparition lunge and swing movement; the sudden appearances remain.
 - Respect reduced motion, keep captions legible, and stop movement when focus is lost.
 
@@ -59,3 +59,5 @@ Desktop browser is the supported gameplay target. Small screens receive a clear 
 No open world, multiplayer, inventory grid, procedural story, AI dialogue, accounts, backend, or desktop wrapper in this slice. No promise of photorealism. We judge success by whether the room looks intentional and the reveal makes the player want another chapter.
 
 Later decisions follow playtesting: a larger story, character animation, save slots, Blender art, and desktop distribution. Before publication, check title availability and review final asset provenance.
+
+The powered drain is labeled on the far wall beneath the red lamp. Directions name the bench, right-wall cabinet, and route around the swing. Recovering the panel happens in the world rather than a reading dialog: the paper moves, the light fades, and the rattling accelerates. The first apparition stands at the distant swing; the later two remain close encounters. The return has a heartbeat and a sprint control, but no chasing enemy or failure timer.

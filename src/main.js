@@ -1,7 +1,7 @@
 import './style.css';
 import * as T from 'three';
 import { makeRoom } from './scene.js';
-import { advance, objectives, canWalk, nextScare } from './story.js';
+import { advance, objectives, canWalk, nextScare, pullProgress } from './story.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('world'), reading=$('reading'), pause=$('pause');
@@ -15,35 +15,47 @@ function run(){
   let audio,master,ringTimer,closeAction=null;
   const keys=new Set();
   const playedScares=new Set();
-  let scareTimer=0;
+  let scareTimer=0,pull=0,stepTime=0,beatTime=0;
+  let volume=.65;
   let mouseSensitivity=.0007;
   $('sensitivity').addEventListener('input',event=>{mouseSensitivity=Number(event.target.value)*.00014;});
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const forward=new T.Vector3(),direction=new T.Vector3();
   function startAudio(){
-    if(audio){audio.resume().catch(()=>{});return;}
-    const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;
-    audio=new Audio();master=audio.createGain();master.gain.value=.12;master.connect(audio.destination);
+    if(audio){audio.resume().then(audioStatus).catch(audioStatus);return;}
+    const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio){$('audio-status').textContent='This browser does not support game audio.';return;}
+    audio=new Audio();master=audio.createGain();master.gain.value=volume;
+    const limiter=audio.createDynamicsCompressor();limiter.threshold.value=-12;limiter.ratio.value=8;master.connect(limiter);limiter.connect(audio.destination);
     const buffer=audio.createBuffer(1,audio.sampleRate*3,audio.sampleRate);const values=buffer.getChannelData(0);
-    for(let i=0;i<values.length;i++)values[i]=(Math.random()*2-1)*.15;
+    for(let i=0;i<values.length;i++)values[i]=(Math.random()*2-1)*.5;
     const rain=audio.createBufferSource();rain.buffer=buffer;rain.loop=true;const filter=audio.createBiquadFilter();filter.type='lowpass';filter.frequency.value=1200;rain.connect(filter);filter.connect(master);rain.start();
     const hum=audio.createOscillator();hum.frequency.value=58;const gain=audio.createGain();gain.gain.value=.07;hum.connect(gain);gain.connect(master);hum.start();
+    audio.onstatechange=audioStatus;audio.resume().then(audioStatus).catch(audioStatus);
     ringTimer=setInterval(()=>{if(stage===1&&!paused)tone(740,.2,.12);},1300);
+  }
+  function audioStatus(){ $('audio-status').textContent=audio?.state==='running'?'Audio ready. Test sound plays three notes.':'Audio paused by browser. Click Test sound to enable it.'; }
+  $('volume').oninput=event=>{volume=Number(event.target.value)/100;if(master)master.gain.value=muted?0:volume;};
+  $('test-sound').onclick=()=>{if(volume===0){volume=.65;$('volume').value='65';}muted=false;startAudio();if(master)master.gain.value=volume;$('mute').textContent='Sound: on';audio?.resume().then(()=>{tone(440,.3,.35);setTimeout(()=>tone(554,.3,.35),350);setTimeout(()=>tone(660,.3,.35),700);}).catch(audioStatus);};
+  function impact(duration=.3,volume=.4){
+    if(!audio||muted)return;
+    const buffer=audio.createBuffer(1,Math.ceil(audio.sampleRate*duration),audio.sampleRate),data=buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);
+    const source=audio.createBufferSource(),filter=audio.createBiquadFilter(),gain=audio.createGain();source.buffer=buffer;filter.type='lowpass';filter.frequency.value=900;gain.gain.value=volume;source.connect(filter);filter.connect(gain);gain.connect(master);source.start();
   }
   function tone(frequency,duration=.18,volume=.15){if(!audio||muted)return;const oscillator=audio.createOscillator(),gain=audio.createGain();oscillator.frequency.value=frequency;gain.gain.setValueAtTime(volume,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);oscillator.connect(gain);gain.connect(master);oscillator.start();oscillator.stop(audio.currentTime+duration);}
   function release(){keys.clear();dragging=false;if(document.pointerLockElement)document.exitPointerLock();}
   function capture(){canvas.focus();try{const result=canvas.requestPointerLock?.();result?.catch(()=>{});}catch{/* Arrow keys and drag work without pointer capture. */}}
-  function refresh(){world.sync(stage,keptLight);$('objective').textContent=stage===10?(keptLight?'You have the missing panel. Get home to 404.':'You have the missing panel. Find apartment 000.'):objectives[stage];$('clock').textContent=stage===0?'00:07':stage<10?'00:08':keptLight?'00:09':'00:00';}
-  function resume(){paused=false;keys.clear();if(pause.open)pause.close();capture();}
+  function refresh(){world.sync(stage,keptLight);$('objective').textContent=stage===10?(keptLight?'RUN — hold Shift. Return through the service door to 404.':'RUN — hold Shift. Return through the service door to apartment 000.'):objectives[stage];$('clock').textContent=stage===0?'00:07':stage<10?'00:08':keptLight?'00:09':'00:00';}
+  function resume(){startAudio();paused=false;keys.clear();if(pause.open)pause.close();capture();}
   async function enterFullscreen(){
     try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen?.();}catch{/* Keep windowed play available when fullscreen is blocked. */}
     resume();
   }
-  function reset(){stage=0;keptLight=false;choicePending=false;yaw=0;pitch=-.03;playedScares.clear();scareTimer=0;world.clearScare();$('scare').hidden=true;world.camera.position.set(0,1.6,3.1);closeAction=null;if(reading.open)reading.close();refresh();}
+  function reset(){stage=0;keptLight=false;choicePending=false;yaw=0;pitch=-.03;playedScares.clear();scareTimer=0;pull=0;stepTime=0;beatTime=0;world.tension(0);world.clearScare();$('scare').hidden=true;world.camera.position.set(0,1.6,3.1);closeAction=null;if(reading.open)reading.close();refresh();}
   $('begin').onclick=()=>{started=true;$('menu').hidden=true;$('menu').style.display='none';document.body.classList.remove('in-menu');startAudio();enterFullscreen();};
   $('resume').onclick=enterFullscreen;
   $('restart').onclick=()=>{reset();resume();};
-  $('mute').onclick=()=>{muted=!muted;if(master)master.gain.value=muted?0:.12;$('mute').textContent=`Sound: ${muted?'off':'on'}`;};
+  $('mute').onclick=()=>{muted=!muted;if(master)master.gain.value=muted?0:volume;$('mute').textContent=`Sound: ${muted?'off':'on'}`;};
   function showPause(){if(!started||reading.open||pause.open)return;paused=true;release();pause.showModal();$('resume').focus();}
   function read(number,title,paragraphs,panel=0,after=null,button='Put the page down'){
     paused=true;release();closeAction=after;
@@ -118,17 +130,10 @@ function run(){
     else if(id==='power'&&stage===8){
       stage=advance(stage,id);tone(160,.5);refresh();
       read('POWER RESTORED','The courtyard has been waiting.',[
-        'The fuse clicks into place. Light reaches the back wall. There is a storm drain where the drawing said it would be.',
+        'The fuse clicks into place. Follow the light to the FAR WALL, past the swing. The barred opening beneath the RED LAMP is the storm drain. A page is trapped inside.',
         'The voice beneath it sounds like your father. “You dropped your picture. Come closer.”',
-        'Your father never called you by the name it uses. That name exists only in the chapter.',
+        'Your father never called you by the name it uses. Get close, look at the trapped page, and HOLD E to pull it out. If you let go, it pulls the page back.',
       ],1,null,'Find the missing panel');
-    }
-    else if(id==='drain'&&stage===9){
-      read('BENEATH THE BUILDING','The voice stops breathing.',[
-        'A page is caught between the bars. You pull one corner. Something on the other side pulls back.',
-        'The drawing shows a figure made of folded pages. Every crease contains a face you recognize. Yours is the only one still unfinished.',
-        'You tear the page free. From very close, in your own voice: “Now I know which side you’re on.”',
-      ],2,()=>{stage=advance(stage,id);},'Pull the panel free');
     }
     else if(id==='finalpage'&&stage===11){
       stage=advance(stage,id);refresh();
@@ -171,14 +176,14 @@ function run(){
       if(distance>2.15)continue;const facing=direction.normalize().dot(forward);
       const score=facing-distance*.08;if(facing>.65&&score>best){best=score;target=object;}
     }
-    $('prompt').textContent=target?`E  —  ${target.name}`:'';
+    $('prompt').textContent=target?(target.id==='drain'?`HOLD E — ${pull>0?'Something is pulling back… '+Math.round(pull/3*100)+'%':'Pull the trapped page free'}`:`E  —  ${target.name}`):'';
   }
   let previous=performance.now();
   function frame(now){
     const dt=Math.min((now-previous)/1000,.04);previous=now;
     if(!paused){
       const scare=nextScare(stage,world.camera.position.z,playedScares);
-      if(scare){playedScares.add(scare);scareTimer=scare==='drain'?1.1:.9;keys.clear();$('prompt').textContent='';world.scare(scare);$('scare').hidden=scare!=='drain';tone(scare==='gate'?65:scare==='boat'?210:46,.7,.7);tone(730,.13,.35);}
+      if(scare){playedScares.add(scare);scareTimer=scare==='drain'?1.1:.9;keys.clear();$('prompt').textContent='';world.scare(scare);$('scare').hidden=scare!=='drain';impact(scare==='drain'?.8:.4,.65);tone(scare==='gate'?65:scare==='boat'?210:46,.7,.45);tone(730,.13,.2);}
       scareTimer=Math.max(0,scareTimer-dt);if(scareTimer===0)$('scare').hidden=true;
     }
     if(!paused&&scareTimer===0){
@@ -186,10 +191,21 @@ function run(){
       pitch=T.MathUtils.clamp(pitch+((keys.has('ArrowUp')?1:0)-(keys.has('ArrowDown')?1:0))*dt*1.2,-1.15,1.15);
       let dx=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),dz=(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0);
       const length=Math.hypot(dx,dz)||1;dx/=length;dz/=length;
-      const speed=1.65*dt,x=world.camera.position.x+(dx*Math.cos(yaw)+dz*Math.sin(yaw))*speed,z=world.camera.position.z+(-dx*Math.sin(yaw)+dz*Math.cos(yaw))*speed;
+      const moving=dx!==0||dz!==0,sprinting=keys.has('ShiftLeft')||keys.has('ShiftRight');
+      const speed=(sprinting?2.8:1.65)*dt,x=world.camera.position.x+(dx*Math.cos(yaw)+dz*Math.sin(yaw))*speed,z=world.camera.position.z+(-dx*Math.sin(yaw)+dz*Math.cos(yaw))*speed;
+      const oldX=world.camera.position.x,oldZ=world.camera.position.z;
       if(canWalk(x,world.camera.position.z,stage))world.camera.position.x=x;
       if(canWalk(world.camera.position.x,z,stage))world.camera.position.z=z;
+      if(moving&&(world.camera.position.x!==oldX||world.camera.position.z!==oldZ)){stepTime+=dt;if(stepTime>(sprinting?.3:.5)){stepTime=0;impact(.09,.25);tone(85,.09,.17);}}else stepTime=0;
       world.camera.rotation.set(pitch,yaw,0,'YXZ');pick();
+      if(stage===9){
+        pull=pullProgress(pull,target?.id==='drain'&&keys.has('KeyE'),dt);
+        world.tension(pull/3,reduced);
+        if(pull>0){beatTime+=dt;if(beatTime>.5-pull*.1){beatTime=0;impact(.12,.2+pull*.08);tone(48,.15,.2);}}
+        if(pull===3){stage=advance(stage,'drain');pull=0;world.tension(0);refresh();}
+      }
+      if(stage===10){beatTime+=dt;if(beatTime>.65){beatTime=0;tone(52,.18,.3);}}
+
     }
     world.animate(paused?0:dt,now/1000,reduced);requestAnimationFrame(frame);
   }

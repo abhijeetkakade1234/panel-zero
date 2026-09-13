@@ -6,13 +6,17 @@ export const objectives = [
   'Find the loose page beneath the red light.',
   'The page says to turn off the red light. Decide.',
   'The service door is unlocked. Go outside.',
-  'Find the paper boat on the courtyard bench.',
-  'Take the fuse to the red power cabinet.',
-  'The storm drain is calling. Retrieve the missing panel.',
+  'Paper boat: on the lit bench to your left.',
+  'Fuse collected. Cross the courtyard to the POWER cabinet on the right wall.',
+  'DRAIN: far wall, beneath the red lamp. Walk around the swing. Hold E to pull.',
   'Get back inside. Return to your apartment.',
   'Your room remembers. Inspect the page on the desk.',
   'You have reached Panel Zero.',
 ];
+
+export function pullProgress(progress, holding, dt) {
+  return Math.max(0, Math.min(3, progress + (holding ? dt : -dt * 2)));
+}
 
 const sequence = ['page', 'phone', 'door', 'neighbor', 'hallpage', 'switch', 'exit', 'boat', 'power', 'drain', 'door', 'finalpage'];
 export function advance(stage, object) {
