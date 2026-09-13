@@ -10,3 +10,5 @@ dialog{position:fixed;inset:0;margin:auto;width:max-content;max-width:calc(100vw
 @media(max-height:700px){.reader-copy{padding:24px}h2{font-size:28px;margin-bottom:18px}#page-copy{font-size:15px;line-height:1.6}#page-copy p{margin-bottom:15px}}
 @media(max-width:700px){.panel-art{min-height:160px}}
 #scare{position:fixed;inset:0;z-index:3;pointer-events:none;background:#05090b url('/art/fold.png') center top / auto 420vh no-repeat}#scare[hidden]{display:none}
+
+#call-status{font:12px/1.5 monospace;color:#67584e;margin:0 0 16px}#replay-call{background:transparent;color:var(--ink);border:1px solid #9e9f96}

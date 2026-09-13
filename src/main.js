@@ -13,6 +13,16 @@ if(world)run();
 function run(){
   let stage=0,started=false,paused=true,yaw=0,pitch=-.03,target=null,dragging=false,muted=false,keptLight=false,choicePending=false;
   let audio,master,ringTimer,closeAction=null;
+  const call=new window.Audio('/audio/telephone.ogg');call.preload='auto';
+  function stopCall(){call.pause();call.currentTime=0;}
+  function playCall(){
+    startAudio();stopCall();
+    if(!audio){$('call-status').textContent='Voice unavailable. The full call is written below.';return;}
+    $('call-status').textContent=muted||volume===0?'Call muted. Sound controls are in Escape → Pause.':'On the line…';
+    call.play().catch(()=>{$('call-status').textContent='Voice could not play. Press Replay call to try again.';});
+  }
+  $('replay-call').onclick=playCall;
+  call.onended=()=>{$('call-status').textContent='The line has gone quiet.';};
   const keys=new Set();
   const playedScares=new Set();
   let scareTimer=0,pull=0,stepTime=0,beatTime=0;
@@ -26,6 +36,7 @@ function run(){
     const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio){$('audio-status').textContent='This browser does not support game audio.';return;}
     audio=new Audio();master=audio.createGain();master.gain.value=volume;
     const limiter=audio.createDynamicsCompressor();limiter.threshold.value=-12;limiter.ratio.value=8;master.connect(limiter);limiter.connect(audio.destination);
+    audio.createMediaElementSource(call).connect(master);
     const buffer=audio.createBuffer(1,audio.sampleRate*3,audio.sampleRate);const values=buffer.getChannelData(0);
     for(let i=0;i<values.length;i++)values[i]=(Math.random()*2-1)*.5;
     const rain=audio.createBufferSource();rain.buffer=buffer;rain.loop=true;const filter=audio.createBiquadFilter();filter.type='lowpass';filter.frequency.value=1200;rain.connect(filter);filter.connect(master);rain.start();
@@ -51,13 +62,14 @@ function run(){
     try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen?.();}catch{/* Keep windowed play available when fullscreen is blocked. */}
     resume();
   }
-  function reset(){stage=0;keptLight=false;choicePending=false;yaw=0;pitch=-.03;playedScares.clear();scareTimer=0;pull=0;stepTime=0;beatTime=0;world.tension(0);world.clearScare();$('scare').hidden=true;world.camera.position.set(0,1.6,3.1);closeAction=null;if(reading.open)reading.close();refresh();}
+  function reset(){stopCall();stage=0;keptLight=false;choicePending=false;yaw=0;pitch=-.03;playedScares.clear();scareTimer=0;pull=0;stepTime=0;beatTime=0;world.tension(0);world.clearScare();$('scare').hidden=true;world.camera.position.set(0,1.6,3.1);closeAction=null;if(reading.open)reading.close();refresh();}
   $('begin').onclick=()=>{started=true;$('menu').hidden=true;$('menu').style.display='none';document.body.classList.remove('in-menu');startAudio();enterFullscreen();};
   $('resume').onclick=enterFullscreen;
   $('restart').onclick=()=>{reset();resume();};
   $('mute').onclick=()=>{muted=!muted;if(master)master.gain.value=muted?0:volume;$('mute').textContent=`Sound: ${muted?'off':'on'}`;};
   function showPause(){if(!started||reading.open||pause.open)return;paused=true;release();pause.showModal();$('resume').focus();}
   function read(number,title,paragraphs,panel=0,after=null,button='Put the page down'){
+    stopCall();$('replay-call').hidden=true;$('call-status').hidden=true;
     paused=true;release();closeAction=after;
     choicePending=false;$('other-choice').hidden=true;
     $('page-number').textContent=number;$('page-title').textContent=title;
@@ -65,7 +77,7 @@ function run(){
     const art=reading.querySelector('.panel-art');art.style.backgroundSize='auto 300%';art.style.backgroundPosition=`center ${panel*50}%`;
     $('close-page').textContent=button;reading.showModal();$('close-page').focus();
   }
-  function closeReading(){if(!reading.open)return;reading.close();const action=closeAction;closeAction=null;choicePending=false;action?.();refresh();resume();}
+  function closeReading(){if(!reading.open)return;stopCall();reading.close();const action=closeAction;closeAction=null;choicePending=false;action?.();refresh();resume();}
   $('close-page').onclick=closeReading;
   reading.addEventListener('cancel',event=>{event.preventDefault();if(choicePending)closeAction=null;closeReading();});
   pause.addEventListener('cancel',event=>{event.preventDefault();resume();});
@@ -78,11 +90,13 @@ function run(){
       'The room on the page has no reader. So who is holding the paper?',
     ],0,()=>{stage=advance(stage,id);tone(740,.3);});}
     else if(id==='phone'){
-      if(stage===1)read('00:08 / INCOMING CALL','Your voice. On the line.',[
+      if(stage===1){read('00:08 / INCOMING CALL','Your voice. On the line.',[
         '“This is you. A little later. Listen carefully: the woman in 402 is going to tell you I’m dead.”',
         'You haven’t said anything. The voice takes a breath exactly when you do.',
         '“Find the page beneath the red light. Do what it says. Then come home.” A click. Under it, very quietly, a woman says: “Keep it on.”',
       ],0,()=>{stage=advance(stage,id);},'Hang up');
+        $('replay-call').hidden=false;$('call-status').hidden=false;playCall();
+      }
       else read('THE TELEPHONE','No dial tone.', ['The receiver is warm. As though someone has just put it down.'],0,null,'Set it down');
     }
     else if(id==='door'){
@@ -158,8 +172,8 @@ function run(){
     keys.add(event.code);if(event.code==='KeyE'&&!event.repeat)use();
   });
   addEventListener('keyup',event=>keys.delete(event.code));
-  addEventListener('blur',()=>{keys.clear();showPause();});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)showPause();});
+  addEventListener('blur',()=>{keys.clear();if(!call.paused){call.pause();$('call-status').textContent='Call paused. Press Replay call to listen again.';}showPause();});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){call.pause();if(reading.open&&!$('replay-call').hidden)$('call-status').textContent='Call paused. Press Replay call to listen again.';showPause();}});
   document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&!paused)showPause();});
   canvas.addEventListener('pointerdown',()=>{if(!paused)dragging=true;});
   addEventListener('pointerup',()=>{dragging=false;});
