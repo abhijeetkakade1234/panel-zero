@@ -9,3 +9,4 @@ dialog{position:fixed;inset:0;margin:auto;width:max-content;max-width:calc(100vw
 #reading{width:min(960px,calc(100vw - 32px))}.reader{min-height:0}.panel-art{min-height:min(500px,calc(100dvh - 34px))}.reader-copy{min-width:0}.sensitivity{display:block;font:13px/1.8 monospace;margin-bottom:20px}.sensitivity span{float:right;font-size:11px}.sensitivity input{display:block;width:100%;accent-color:var(--red);margin:10px 0}
 @media(max-height:700px){.reader-copy{padding:24px}h2{font-size:28px;margin-bottom:18px}#page-copy{font-size:15px;line-height:1.6}#page-copy p{margin-bottom:15px}}
 @media(max-width:700px){.panel-art{min-height:160px}}
+#scare{position:fixed;inset:0;z-index:3;pointer-events:none;background:#05090b url('/art/fold.png') center top / auto 420vh no-repeat}#scare[hidden]{display:none}

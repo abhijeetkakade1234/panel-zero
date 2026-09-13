@@ -1,7 +1,7 @@
 import './style.css';
 import * as T from 'three';
 import { makeRoom } from './scene.js';
-import { advance, objectives, canWalk } from './story.js';
+import { advance, objectives, canWalk, nextScare } from './story.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('world'), reading=$('reading'), pause=$('pause');
@@ -14,6 +14,8 @@ function run(){
   let stage=0,started=false,paused=true,yaw=0,pitch=-.03,target=null,dragging=false,muted=false,keptLight=false,choicePending=false;
   let audio,master,ringTimer,closeAction=null;
   const keys=new Set();
+  const playedScares=new Set();
+  let scareTimer=0;
   let mouseSensitivity=.0007;
   $('sensitivity').addEventListener('input',event=>{mouseSensitivity=Number(event.target.value)*.00014;});
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -31,13 +33,13 @@ function run(){
   function tone(frequency,duration=.18,volume=.15){if(!audio||muted)return;const oscillator=audio.createOscillator(),gain=audio.createGain();oscillator.frequency.value=frequency;gain.gain.setValueAtTime(volume,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);oscillator.connect(gain);gain.connect(master);oscillator.start();oscillator.stop(audio.currentTime+duration);}
   function release(){keys.clear();dragging=false;if(document.pointerLockElement)document.exitPointerLock();}
   function capture(){canvas.focus();try{const result=canvas.requestPointerLock?.();result?.catch(()=>{});}catch{/* Arrow keys and drag work without pointer capture. */}}
-  function refresh(){world.sync(stage,keptLight);$('objective').textContent=stage===6?(keptLight?'The light is still on. Go home to 404.':'The light is out. Find apartment 000.'):objectives[stage];$('clock').textContent=stage===0?'00:07':stage<6?'00:08':keptLight?'00:09':'00:00';}
+  function refresh(){world.sync(stage,keptLight);$('objective').textContent=stage===10?(keptLight?'You have the missing panel. Get home to 404.':'You have the missing panel. Find apartment 000.'):objectives[stage];$('clock').textContent=stage===0?'00:07':stage<10?'00:08':keptLight?'00:09':'00:00';}
   function resume(){paused=false;keys.clear();if(pause.open)pause.close();capture();}
   async function enterFullscreen(){
     try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen?.();}catch{/* Keep windowed play available when fullscreen is blocked. */}
     resume();
   }
-  function reset(){stage=0;keptLight=false;choicePending=false;yaw=0;pitch=-.03;world.camera.position.set(0,1.6,3.1);closeAction=null;if(reading.open)reading.close();refresh();}
+  function reset(){stage=0;keptLight=false;choicePending=false;yaw=0;pitch=-.03;playedScares.clear();scareTimer=0;world.clearScare();$('scare').hidden=true;world.camera.position.set(0,1.6,3.1);closeAction=null;if(reading.open)reading.close();refresh();}
   $('begin').onclick=()=>{started=true;$('menu').hidden=true;$('menu').style.display='none';document.body.classList.remove('in-menu');startAudio();enterFullscreen();};
   $('resume').onclick=enterFullscreen;
   $('restart').onclick=()=>{reset();resume();};
@@ -56,7 +58,7 @@ function run(){
   reading.addEventListener('cancel',event=>{event.preventDefault();if(choicePending)closeAction=null;closeReading();});
   pause.addEventListener('cancel',event=>{event.preventDefault();resume();});
   function use(){
-    if(paused||!target)return;
+    if(paused||scareTimer>0||!target)return;
     const id=target.id;
     if(id==='page'&&stage===0){read('THE DELIVERED CHAPTER / 01','Tomorrow, in ink.',[
       'Your room. Your cup. Even the crack beside the window. Someone has drawn every detail.',
@@ -73,14 +75,14 @@ function run(){
     }
     else if(id==='door'){
       if(stage===2){stage=advance(stage,id);tone(110,.5);refresh();}
-      else if(stage===6){
+      else if(stage===10){
         stage=advance(stage,id);refresh();tone(110,.5);
         read('BACK AT YOUR DOOR',keptLight?'404. Still yours.':'000. Before you lived here.',keptLight?[
           'The latch opens before you touch it. From 402, Mrs. Arai calls: “You’re late. That’s new.”',
-          'The phone has stopped ringing. The cup is cold. On the desk, a page you haven’t seen before.',
+          'You set the soaked panel on the desk. The paper boat, the fuse, the thing beneath the drain: all of it is already drawn on the reverse.',
         ]:[
           'Where 404 should be, three zeroes. You hear the telephone ringing inside, then stop as the latch opens.',
-          'Your room is colder. There is a fresh page on the desk. The ink is wet.',
+          'Your room is colder. You set the panel on the desk. Under the paper, something keeps scratching.',
         ],0,null,'Go inside');
       }
       else if(stage<2)read('APARTMENT 404','Wait.', ['Something in the room still expects an answer.'],0,null,'Step back');
@@ -90,7 +92,7 @@ function run(){
         'A chain catches on the other side of the door. “I watched them carry you down these stairs. Then you came back and asked me to leave the red light on.”',
         '“Every night you turn it off. Every morning I forget your face. Tonight I wrote your name on my wrist.”',
         'You mention the call. A long silence. “You didn’t own a telephone.” The light beneath her door stays on.',
-      ]:[keptLight&&stage>=6?'“It’s nine minutes past midnight. It hasn’t been nine minutes past midnight in a very long time.”':'“A page can say anything. Keep one thing in this corridor where you can see it.”'],1,()=>{stage=advance(stage,id);},'Step away from 402');
+      ]:[keptLight&&stage>=10?'“It’s nine minutes past midnight. It hasn’t been nine minutes past midnight in a very long time.”':'“A page can say anything. Keep one thing in this corridor where you can see it.”'],1,()=>{stage=advance(stage,id);},'Step away from 402');
     }
     else if(id==='hallpage'&&stage===4){read('THE NEXT PAGE / A CORRECTION','Someone edited her out.',[
       'The first panel shows you speaking to Mrs. Arai. Her speech bubble reads: “Turn off the light.” That is not what she said.',
@@ -100,21 +102,44 @@ function run(){
     else if(id==='switch'&&stage===5){
       read('THE UNPRINTED MOMENT','Your hand. Your decision.',[
         'The page has already drawn your finger on the switch. Mrs. Arai is waiting behind her door.',
-        'The voice on the telephone promised you a way home. The woman in 402 asked you to leave something unchanged.',
-        'For once, the next panel does not have to be right.',
+        'On the back of the page: a courtyard bench, a paper boat, and the missing panel caught beneath a storm drain. Arai whispers through the wall: “Bring that panel back. It’s the first time you see its face.”',
+        'The service-door latch clicks. Before you go outside, decide what to leave behind.',
       ],1,()=>{keptLight=false;stage=advance(stage,id);tone(65,.7);},'Turn it off — follow the page');
       choicePending=true;const other=$('other-choice');other.hidden=false;other.textContent='Leave it on — trust the witness';other.onclick=()=>{closeAction=()=>{keptLight=true;stage=advance(stage,id);tone(440,.5);};closeReading();};
     }
-    else if(id==='finalpage'&&stage===7){
+    else if(id==='exit'&&stage===6){stage=advance(stage,id);tone(105,.6);refresh();}
+    else if(id==='boat'&&stage===7){
+      read('THE COURTYARD / A CHILDHOOD GAME','You made this when you were eight.',[
+        'A paper boat on a dry bench. The rain falls everywhere except here. You remember folding this shape with your father. You have never told anyone in this building.',
+        'Inside: a ceramic fuse wrapped in a page from your childhood notebook. Someone has drawn your adult face on every child.',
+        'A note: POWER FIRST. THEN REACH INTO THE DRAIN. Behind you, a swing starts to move.',
+      ],1,()=>{stage=advance(stage,id);},'Take the fuse');
+    }
+    else if(id==='power'&&stage===8){
+      stage=advance(stage,id);tone(160,.5);refresh();
+      read('POWER RESTORED','The courtyard has been waiting.',[
+        'The fuse clicks into place. Light reaches the back wall. There is a storm drain where the drawing said it would be.',
+        'The voice beneath it sounds like your father. “You dropped your picture. Come closer.”',
+        'Your father never called you by the name it uses. That name exists only in the chapter.',
+      ],1,null,'Find the missing panel');
+    }
+    else if(id==='drain'&&stage===9){
+      read('BENEATH THE BUILDING','The voice stops breathing.',[
+        'A page is caught between the bars. You pull one corner. Something on the other side pulls back.',
+        'The drawing shows a figure made of folded pages. Every crease contains a face you recognize. Yours is the only one still unfinished.',
+        'You tear the page free. From very close, in your own voice: “Now I know which side you’re on.”',
+      ],2,()=>{stage=advance(stage,id);},'Pull the panel free');
+    }
+    else if(id==='finalpage'&&stage===11){
       stage=advance(stage,id);refresh();
       read(keptLight?'ENDING 02 / OUTSIDE THE FRAME':'ENDING 01 / THE DELIVERY',keptLight?'One minute nobody wrote.':'You know this hand.',keptLight?[
         'The page shows the corridor, the red light, and Mrs. Arai’s door. Underneath is an empty panel. No instructions. No picture of you.',
-        'On the back: “If you can read this, I remembered your face.” Signed Arai. The ink on the signature is still drying.',
-        'Your clock changes to 00:09. Somewhere outside the building, a telephone begins to ring. You let it.',
+        'Arai’s signature crosses the figure’s face. The red light you left on has kept her memory intact. For the first time, the creature on the page is looking away from you.',
+        'Your clock changes to 00:09. In the courtyard, the swing stops. You fold the page into a boat and leave it on the desk. This time, nothing tells you what happens next.',
       ]:[
         'Panel Zero: your hand feeding a page beneath the door of 404. Behind you, apartment 402 has been painted over.',
-        'The next panel shows you at the telephone, calling someone in a room exactly like this one. You know what you have to say.',
-        '“This is you. A little later.” Under the desk, a stack of identical chapters. The top one is dated tomorrow.',
+        'The next panel shows you at the telephone. Your fingers have creases instead of joints. Bringing the page home gave it the final piece of your face.',
+        '“This is you. A little later.” Outside, someone leaves a paper boat on the bench. You hear your father’s voice practicing in the drain. The next tenant is already awake.',
       ],keptLight?1:2,()=>reset(),'Begin another reading');
     }
     else if(id==='cup')read('AN EVERYDAY OBJECT','Still warm.', ['A ring of coffee stains the desk. On the page, the cup was on the other side of the telephone.','You live alone. You are almost certain.'],0,null,'Leave it');
@@ -133,14 +158,15 @@ function run(){
   document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&!paused)showPause();});
   canvas.addEventListener('pointerdown',()=>{if(!paused)dragging=true;});
   addEventListener('pointerup',()=>{dragging=false;});
-  addEventListener('mousemove',event=>{if(!paused&&(document.pointerLockElement===canvas||dragging)){yaw-=event.movementX*mouseSensitivity;pitch-=event.movementY*mouseSensitivity;pitch=T.MathUtils.clamp(pitch,-1.15,1.15);}});
+  addEventListener('mousemove',event=>{if(!paused&&scareTimer===0&&(document.pointerLockElement===canvas||dragging)){yaw-=event.movementX*mouseSensitivity;pitch-=event.movementY*mouseSensitivity;pitch=T.MathUtils.clamp(pitch,-1.15,1.15);}});
   function pick(){
     world.camera.getWorldDirection(forward);target=null;let best=0;
     for(const object of world.objects){
-      if(object.id==='page'&&stage!==0||object.id==='hallpage'&&stage!==4||object.id==='switch'&&stage!==5||object.id==='finalpage'&&stage!==7||object.id==='door'&&stage>=3&&stage!==6||object.id==='neighbor'&&stage<3)continue;
+      if(object.id==='page'&&stage!==0||object.id==='hallpage'&&stage!==4||object.id==='switch'&&stage!==5||object.id==='finalpage'&&stage!==11||object.id==='door'&&stage>=3&&stage!==10||object.id==='neighbor'&&stage<3)continue;
+      if(['exit','boat','power','drain'].includes(object.id)&&stage!==({exit:6,boat:7,power:8,drain:9})[object.id])continue;
       if(object.id==='neighbor'&&stage>=6&&!keptLight)continue;
       // Only offer room props on the room side of the entrance.
-      if(world.camera.position.z < -3.4 && !['door','hallpage','neighbor','switch'].includes(object.id))continue;
+      if(world.camera.position.z < -3.4 && !['door','hallpage','neighbor','switch','exit','boat','power','drain'].includes(object.id))continue;
       direction.copy(object.position).sub(world.camera.position);const distance=direction.length();
       if(distance>2.15)continue;const facing=direction.normalize().dot(forward);
       const score=facing-distance*.08;if(facing>.65&&score>best){best=score;target=object;}
@@ -151,6 +177,11 @@ function run(){
   function frame(now){
     const dt=Math.min((now-previous)/1000,.04);previous=now;
     if(!paused){
+      const scare=nextScare(stage,world.camera.position.z,playedScares);
+      if(scare){playedScares.add(scare);scareTimer=scare==='drain'?1.1:.9;keys.clear();$('prompt').textContent='';world.scare(scare);$('scare').hidden=scare!=='drain';tone(scare==='gate'?65:scare==='boat'?210:46,.7,.7);tone(730,.13,.35);}
+      scareTimer=Math.max(0,scareTimer-dt);if(scareTimer===0)$('scare').hidden=true;
+    }
+    if(!paused&&scareTimer===0){
       yaw+=((keys.has('ArrowLeft')?1:0)-(keys.has('ArrowRight')?1:0))*dt*1.5;
       pitch=T.MathUtils.clamp(pitch+((keys.has('ArrowUp')?1:0)-(keys.has('ArrowDown')?1:0))*dt*1.2,-1.15,1.15);
       let dx=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),dz=(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0);

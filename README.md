@@ -2,7 +2,7 @@
 
 A short first-person mystery. A manga chapter arrives under your apartment door, depicting a night you haven't lived yet.
 
-The first slice is one apartment, one hallway, and one impossible chapter. Target playtime: about five minutes on a first visit. Browser first, keyboard and mouse. This is a prototype, not the full game.
+Explore an apartment, a hallway, and an enclosed outdoor courtyard before returning home with a missing manga panel. Target playtime: about 8–12 minutes on a first visit. Contains exactly three scripted jumpscares. Browser first, keyboard and mouse. This is a prototype, not the full game.
 
 ## Project docs
 
@@ -27,7 +27,7 @@ WASD moves, mouse or arrow keys look, E inspects, and Escape pauses. If mouse ca
 
 Enter and Resume request browser fullscreen; if the browser blocks it, windowed play still works. Mouse look defaults to a slower speed and can be adjusted with the sensitivity slider in Pause. Reading dialogs stay centered in the visible viewport and scroll on short windows.
 
-The current sequence includes apartment exploration, Mrs. Arai in 402, a lying manga chapter, the red-light decision, and two endings reached by returning home. No AI API or paid service is required to play.
+The sequence includes apartment exploration, Mrs. Arai in 402, a lying manga chapter, the red-light decision, an outdoor paper-boat/fuse/storm-drain investigation, and two endings reached by returning home. No AI API or paid service is required to play.
 
 ## Current limits
 

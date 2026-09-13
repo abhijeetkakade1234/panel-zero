@@ -107,14 +107,15 @@ export function makeRoom(canvas) {
   box(.7,.08,.22,2.76,2.7,-2.3,'#354642');for(let i=0;i<3;i++)box(.13,.045,.18,2.72,2.62,-2.55+i*.2,'#242f32');
   // Corridor and lamps.
   box(6,.1,6.7,0,-.02,-6.6,'#5b6260');box(6,.15,6.7,0,3.4,-6.6,'#424d4c');
-  for(const x of [-3.05,3.05])box(.15,3.4,6.7,x,1.7,-6.6,'#5e706b');box(6,3.4,.15,0,1.7,-9.9,'#465c59');
+  for(const x of [-3.05,3.05])box(.15,3.4,6.7,x,1.7,-6.6,'#5e706b');
+  box(.85,3.4,.15,-2.6,1.7,-9.9,'#465c59');box(3.65,3.4,.15,1.2,1.7,-9.9,'#465c59');box(1.65,.55,.15,-1.3,3.13,-9.9,'#465c59');
+  const serviceDoor=box(1.6,2.85,.1,-1.3,1.43,-9.9,'#3f5654');
   for(let i=0;i<3;i++){
-    box(1.25,2.6,.08,-1.3,1.3,-9.79,'#5e6c65');
     const hallDoor=box(.08,2.6,1.3,2.94,1.3,-4.5-i*1.75,'#52615b');
     box(.5,.06,.25,0,3.2,-4.4-i*1.8,i===2?redLampMaterial:new T.MeshBasicMaterial({color:'#bdc9b5'}));
     if(i<2){const light=new T.PointLight('#a0bfb4',7,5,2);light.position.set(0,2.9,-4.4-i*1.8);scene.add(light);}
   }
-  label('NO EXIT',.65,.18,0,2.6,-9.8,'#364944','#c4b99c');
+  label('COURTYARD',1.3,.18,-1.3,3,-9.79,'#364944','#c4b99c');
   for(let i=0;i<3;i++){
     const number=label(String(402-i),.4,.2,2.88,1.85,-4.5-i*1.75);
     number.rotation.y=-Math.PI/2;
@@ -128,10 +129,63 @@ export function makeRoom(canvas) {
   function page(x,z){const p=new T.Mesh(new T.PlaneGeometry(.39,.56),new T.MeshStandardMaterial({map:art,roughness:1,side:T.DoubleSide}));p.rotation.x=-Math.PI/2;p.rotation.z=.15;p.position.set(x,.044,z);scene.add(p);return p;}
   const firstPage=page(.95,-2.45),hallPage=page(.2,-8.35),finalPage=page(-1.75,.68);
   finalPage.position.y=.925;finalPage.visible=false;
+  // Outdoor service courtyard: a real traversable space beyond the corridor.
+  box(12,.14,14,0,-.1,-17,'#273b41');
+  for(let row=0;row<14;row++)for(let col=0;col<8;col++)
+    box(1.47,.025,.97,-5.25+col*1.5,.006,-10.5-row,['#304850','#354b50','#3d5053'][(row+col)%3]);
+  box(.2,7,14,-5.8,3.5,-17,'#263e48');box(.2,7,14,5.8,3.5,-17,'#304751');
+  box(12,3.8,.2,0,1.9,-24,'#31464b');
+  for(const x of [-5.67,5.67]){
+    for(let j=0;j<3;j++)for(let i=0;i<4;i++){
+      box(.03,1.1,.8,x,2.8+j*1.65,-12-i*2.7,new T.MeshBasicMaterial({color:(i+j)%3===0?'#a68f60':'#172c35'}));
+      box(.7,.08,1.2,x,2.2+j*1.65,-12-i*2.7,'#172c35');
+    }
+    cylinder(.06,.06,6,x,3,-16,'#1a3038');
+  }
+  // Bench and origami boat. Its angular paper geometry is intentional in-world art.
+  for(let i=0;i<4;i++)box(2.2,.08,.16,-3.9,.62,-14.45+i*.18,'#86704d');
+  for(let i=0;i<3;i++)box(2.2,.14,.07,-3.9,.95+i*.2,-14.55,'#655638');
+  for(const x of [-4.75,-3.05])box(.08,.6,.65,x,.3,-14.15,'#1c2d30');
+  const boat=new T.Group();boat.position.set(-3.6,.76,-14.15);scene.add(boat);
+  const hull=new T.Mesh(new T.ConeGeometry(.3,.22,4,1,true),mat('#e5d6ae'));hull.rotation.z=Math.PI;hull.scale.z=.55;boat.add(hull);
+  const sail=new T.Mesh(new T.ConeGeometry(.16,.28,3),mat('#f1e3bd'));sail.position.y=.1;boat.add(sail);
+  const benchLight=new T.PointLight('#ffd293',20,7,2);benchLight.position.set(-4.7,2.4,-14);scene.add(benchLight);
+  cylinder(.1,.22,.16,-4.7,2.65,-14,'#27373a');
+  box(.4,.025,.4,-4.7,2.56,-14,new T.MeshBasicMaterial({color:'#ffe0a3'}));
+  // Abandoned swing. Movement stops while reading and under reduced motion.
+  for(const x of [-1.2,1.2]){box(.09,2.6,.09,x,1.3,-18.7,'#5a4037');}
+  box(2.55,.1,.12,0,2.65,-18.7,'#624337');
+  const swing=new T.Group();swing.position.set(0,2.55,-18.7);scene.add(swing);
+  for(const x of [-.3,.3]){const chain=new T.Mesh(new T.CylinderGeometry(.015,.015,1.9,5),mat('#182b31'));chain.position.set(x,-.95,0);swing.add(chain);}
+  const seat=new T.Mesh(new T.BoxGeometry(.8,.06,.3),mat('#453c30'));seat.position.y=-1.92;swing.add(seat);
+  box(.22,1.1,.7,5.25,1.3,-18,'#733d32');
+  const powerLabel=label('POWER',.6,.2,5.11,1.55,-18);powerLabel.rotation.y=-Math.PI/2;
+  const poweredLamp=new T.PointLight('#c5e0d4',0,17,2);poweredLamp.position.set(0,4.1,-20);scene.add(poweredLamp);
+  box(.75,.08,.4,0,4.3,-20,'#172930');
+  // Recessed drain, iron bars, warning lamp, shallow reflective-looking puddles.
+  box(2,1.55,.05,.4,.8,-23.86,new T.MeshBasicMaterial({color:'#03090d'}));
+  for(let i=0;i<9;i++)box(.045,1.6,.08,-.48+i*.22,.8,-23.79,'#697677');
+  box(2.15,.12,.12,.4,1.61,-23.79,'#687775');
+  const drainPage=new T.Mesh(new T.PlaneGeometry(.3,.4),new T.MeshStandardMaterial({map:art,side:T.DoubleSide}));drainPage.position.set(.4,.8,-23.72);scene.add(drainPage);
+  const drainLight=new T.PointLight('#e8593e',16,6,2);drainLight.position.set(.4,2.3,-23);scene.add(drainLight);
+  box(.18,.18,.06,.4,2.1,-23.8,new T.MeshBasicMaterial({color:'#ea694f'}));
+  const wet=new T.MeshStandardMaterial({color:'#597377',roughness:.15,metalness:.45,transparent:true,opacity:.48});
+  for(let i=0;i<8;i++){const puddle=new T.Mesh(new T.CircleGeometry(.6+(i%3)*.25,20),wet);puddle.rotation.x=-Math.PI/2;puddle.scale.y=.45;puddle.position.set(-3+(i*1.73)%6,.032,-12-i*1.35);scene.add(puddle);}
+  for(let i=0;i<14;i++){
+    const x=i%2===0?-5.3:5.3,z=-11-i*.85;
+    for(let j=0;j<3;j++){const weed=box(.025,.25+j*.1,.025,x+j*.09,.13+j*.05,z,'#476458',false);weed.rotation.z=(j-1)*.35;}
+  }
+  const outsideRain=new T.BufferGeometry(),rainPoints=new Float32Array(240*6);
+  for(let i=0;i<240;i++){const x=-5.5+(i*.731)%11,y=(i*.419)%6,z=-10.5-(i*.613)%13;rainPoints.set([x,y,z,x,y-.2,z],i*6);}
+  outsideRain.setAttribute('position',new T.BufferAttribute(rainPoints,3));scene.add(new T.LineSegments(outsideRain,new T.LineBasicMaterial({color:'#94c4cf',transparent:true,opacity:.25})));
+  const foldTexture=new T.TextureLoader().load('/art/fold.png');foldTexture.colorSpace=T.SRGBColorSpace;
+  const apparition=new T.Sprite(new T.SpriteMaterial({map:foldTexture,transparent:true,depthTest:false,depthWrite:false,opacity:.98}));
+  apparition.center.set(.5,.87);apparition.renderOrder=10;
+  apparition.scale.set(2,3,1);apparition.visible=false;scene.add(apparition);
   // ponytail: batch static props by material; moving props stay separate.
   const batches=new Map(),ink=[];
   for(const mesh of [...scene.children]){
-    if(!mesh.isMesh||doorParts.includes(mesh)||[firstPage,hallPage,finalPage,neighborGlow,switchLever,erasedDoor].includes(mesh))continue;
+    if(!mesh.isMesh||doorParts.includes(mesh)||[firstPage,hallPage,finalPage,neighborGlow,switchLever,erasedDoor,serviceDoor,drainPage].includes(mesh))continue;
     mesh.updateMatrixWorld(true);
     const geometry=mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
     if(!batches.has(mesh.material))batches.set(mesh.material,[]);
@@ -149,6 +203,10 @@ export function makeRoom(canvas) {
     {id:'neighbor',name:'Knock on apartment 402',position:new T.Vector3(2.88,1.4,-4.5)},
     {id:'switch',name:'Decide what to do with the red light',position:new T.Vector3(1.5,1.4,-9.72)},
     {id:'finalpage',name:'Read the page on your desk',position:new T.Vector3(-1.75,1.05,.68)},
+    {id:'exit',name:'Open the service door',position:new T.Vector3(-1.3,1.4,-9.8)},
+    {id:'boat',name:'Unfold the paper boat',position:new T.Vector3(-3.6,.9,-14.15)},
+    {id:'power',name:'Fit the fuse in the power cabinet',position:new T.Vector3(5.1,1.3,-18)},
+    {id:'drain',name:'Pull the page from the storm drain',position:new T.Vector3(.4,.9,-23.7)},
     {id:'cup',name:'Inspect the cup',position:new T.Vector3(-1.85,1.05,.2)},
     {id:'books',name:'Inspect the books',position:new T.Vector3(-2.4,1.35,-2.45)},
     {id:'bed',name:'Inspect the futon',position:new T.Vector3(1.5,.7,1.1)},
@@ -156,10 +214,12 @@ export function makeRoom(canvas) {
   let zeroPlaque;
   function sync(stage,keptLight=false){
     renderer.shadowMap.needsUpdate=true;
-    firstPage.visible=stage===0;hallPage.visible=stage<5;finalPage.visible=stage===7;
-    const doorClosed=stage<3||stage===6;
+    firstPage.visible=stage===0;hallPage.visible=stage<5;finalPage.visible=stage===11;
+    boat.visible=stage<8;serviceDoor.visible=stage<7;poweredLamp.intensity=stage>=9?35:0;
+    drainPage.visible=stage<10;
+    const doorClosed=stage<3||(stage>=6&&stage<11);
     doorParts.forEach(p=>p.visible=doorClosed);
-    if(stage===6){
+    if(stage>=6&&stage<11){
       plaque.visible=false;
       if(zeroPlaque){scene.remove(zeroPlaque);zeroPlaque.geometry.dispose();zeroPlaque.material.map.dispose();zeroPlaque.material.dispose();}
       zeroPlaque=label(keptLight?'404':'000',.46,.23,.95,2,-3.205);zeroPlaque.rotation.y=Math.PI;
@@ -170,15 +230,22 @@ export function makeRoom(canvas) {
     neighborGlow.visible=stage<6||keptLight;
     erasedDoor.visible=stage>=6&&!keptLight;
     finalPage.material.map=keptLight?null:art;finalPage.material.color.set(keptLight?'#efe9d6':'#ffffff');finalPage.material.needsUpdate=true;
-    warm.intensity=stage>=7?(keptLight?20:3):15;
-    ceiling.color.set(stage>=7&&!keptLight?'#647f94':'#c2d1c7');
-    objects[2].name=stage===6?`Return to apartment ${keptLight?'404':'000'}`:'Open apartment 404';
+    warm.intensity=stage>=11?(keptLight?20:3):15;
+    ceiling.color.set(stage>=11&&!keptLight?'#647f94':'#c2d1c7');
+    objects[2].name=stage===10?`Return to apartment ${keptLight?'404':'000'}`:'Open apartment 404';
   }
+  let scareRemaining=0,scareLength=0,scareId='',swingTime=0;
+  const scareForward=new T.Vector3();
+  function scare(id){scareId=id;scareRemaining=scareLength=id==='drain'?1.1:.9;camera.getWorldDirection(scareForward);apparition.position.copy(camera.position).addScaledVector(scareForward,id==='gate'?4:2.5);apparition.visible=true;}
+  function clearScare(){scareRemaining=0;apparition.visible=false;swingTime=0;}
   function animate(dt,time,reduced){
+    swingTime+=dt;if(!reduced)swing.rotation.x=Math.sin(swingTime*1.8)*.13;
+    if(scareRemaining>0){scareRemaining=Math.max(0,scareRemaining-dt);const progress=1-scareRemaining/scareLength;if(!reduced)apparition.position.addScaledVector(scareForward,-dt*(scareId==='gate'?2:1.5));apparition.material.opacity=scareRemaining>0?1:0;const growth=reduced?0:progress;apparition.scale.set(2+growth,3+growth,1);apparition.visible=scareRemaining>0;}
+    if(!reduced){for(let i=0;i<240;i++){rainPoints[i*6+1]-=dt*3;rainPoints[i*6+4]-=dt*3;if(rainPoints[i*6+1]<0){rainPoints[i*6+1]+=6;rainPoints[i*6+4]+=6;}}outsideRain.attributes.position.needsUpdate=true;}
     if(!reduced){for(let i=0;i<180;i++){drops[i*6+1]-=dt*2.5;drops[i*6+4]-=dt*2.5;if(drops[i*6+1]<.2){drops[i*6+1]+=4;drops[i*6+4]+=4;}}rainGeo.attributes.position.needsUpdate=true;}
     renderer.render(scene,camera);
   }
   function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
   resize();addEventListener('resize',resize);
-  return {renderer,scene,camera,objects,sync,animate};
+  return {renderer,scene,camera,objects,sync,animate,scare,clearScare};
 }
